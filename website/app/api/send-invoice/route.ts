@@ -143,12 +143,16 @@ export async function POST(request: Request) {
                           <span style="display: inline-block; padding: 6px 12px; background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 999px; font-size: 11px; font-weight: 700; color: #047857;">
                             STATUS: ${status} • ${approvedBy ? `By ${approvedBy}` : 'Verified'}
                           </span>
-                          ${qrDataUrl ? `
+                          ${(qrDataUrl || verifyUrl || receiptRef) ? (() => {
+                            const qrTargetUrl = verifyUrl || `https://app.wonoriginals.online/verify/${encodeURIComponent(receiptRef || 'WON')}`;
+                            const qrImageSrc = `https://api.qrserver.com/v1/create-qr-code/?size=176x176&margin=6&bgcolor=ffffff&color=0f172a&data=${encodeURIComponent(qrTargetUrl)}`;
+                            return `
                             <div style="margin-top: 12px;">
-                              <img src="${qrDataUrl}" alt="QR Verify" width="88" height="88" style="display: block; border: 1px solid #e2e8f0; border-radius: 8px; padding: 4px; background: #fff;" />
-                              <p style="margin: 4px 0 0 0; font-size: 10px; color: #64748b;">Scan QR or <a href="${verifyUrl}" style="color: #087fc4;">verify online</a></p>
+                              <img src="${qrImageSrc}" alt="QR Verify" width="88" height="88" style="display: block; width: 88px; height: 88px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 4px; background-color: #ffffff;" />
+                              <p style="margin: 4px 0 0 0; font-size: 10px; color: #64748b;">Scan QR or <a href="${qrTargetUrl}" style="color: #087fc4;">verify online</a></p>
                             </div>
-                          ` : ''}
+                          `;
+                          })() : ''}
                         </td>
                         <td width="45%" align="right" valign="top">
                           <table width="100%" border="0" cellspacing="0" cellpadding="0">
@@ -180,7 +184,23 @@ export async function POST(request: Request) {
       </html>
     `;
 
-    const subject = `[WON ${receiptRef || 'Receipt'}] ${title || docLabel} (${formattedAmount})`;
+    const subject = `WON Receipt ${receiptRef ? `${receiptRef} — ` : ''}${title || docLabel} (${formattedAmount})`;
+    const qrVerifyLink = verifyUrl || `https://app.wonoriginals.online/verify/${encodeURIComponent(receiptRef || 'WON')}`;
+    const textBody = [
+      `WON Agency - ${docLabel}`,
+      `Receipt Ref: ${receiptRef || 'ITR-WON'}`,
+      `Date: ${date || '-'}`,
+      `${personLabel}: ${usedBy || 'Agency Member'} (${toEmail})`,
+      `Project & Category: ${workProject || 'General Operations'} (${category || 'General'})`,
+      `Item: ${title || 'Transaction Item'} - ${formattedAmount}`,
+      notes ? `Notes: ${notes}` : '',
+      `Status: ${status} (${approvedBy ? `By ${approvedBy}` : 'Verified'})`,
+      `Verify online: ${qrVerifyLink}`,
+      '',
+      '© 2026 WON • Official Verified Receipt',
+    ]
+      .filter(Boolean)
+      .join('\n');
 
     let res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -190,9 +210,11 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         from: 'WON Originals <notifications@mail.wonoriginals.online>',
+        reply_to: 'WON Originals <notifications@mail.wonoriginals.online>',
         to: [toEmail],
         subject,
         html: htmlBody,
+        text: textBody,
       }),
     });
 
@@ -207,9 +229,11 @@ export async function POST(request: Request) {
         },
         body: JSON.stringify({
           from: 'WON Operations <onboarding@resend.dev>',
+          reply_to: 'WON Originals <notifications@mail.wonoriginals.online>',
           to: [toEmail],
           subject,
           html: htmlBody,
+          text: textBody,
         }),
       });
       const fallbackData = await fallbackRes.json();

@@ -314,13 +314,30 @@ export class EmailService {
         </html>
       `;
 
-      const emailSubject = subject ? `[WON Directive] ${subject}` : `[WON Notice] ${title || 'Official Directive'}`;
+      const emailSubject = subject ? `WON Notice: ${subject}` : `WON Notice: ${title || 'Official Update'}`;
+      const textBody = [
+        salutation || '',
+        subject ? `Subject: ${subject}` : '',
+        leadStatement || '',
+        ...(Array.isArray(bullets)
+          ? bullets.map((b: { heading?: string; bodyText: string }) =>
+              `• ${b.heading ? `${b.heading}: ` : ''}${b.bodyText}`,
+            )
+          : []),
+        calloutLinkText || '',
+        `${signoffGreeting} ${signoffTeam}`,
+        `${footerCopyright} • ${footerDisclaimer}`,
+      ]
+        .filter(Boolean)
+        .join('\n\n');
 
       const { data, error } = await this.resend.emails.send({
         from: this.fromEmail,
+        replyTo: this.fromEmail,
         to: toEmails,
         subject: emailSubject,
         html: htmlBody,
+        text: textBody,
       });
 
       if (error) {
@@ -328,9 +345,11 @@ export class EmailService {
         // Fallback to onboarding@resend.dev in case custom domain has temporary DNS hiccup
         const fallbackRes = await this.resend.emails.send({
           from: 'WON Operations <onboarding@resend.dev>',
+          replyTo: this.fromEmail,
           to: toEmails,
           subject: emailSubject,
           html: htmlBody,
+          text: textBody,
         });
 
         if (fallbackRes.error) {

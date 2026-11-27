@@ -106,8 +106,24 @@ export async function POST(request: Request) {
     `;
 
     const emailSubject = subject
-      ? `[WON Directive] ${subject}`
-      : `[WON Notice] ${title || 'Official Directive'}`;
+      ? `WON Notice: ${subject}`
+      : `WON Notice: ${title || 'Official Update'}`;
+
+    const textBody = [
+      salutation || '',
+      subject ? `Subject: ${subject}` : '',
+      leadStatement || '',
+      ...(Array.isArray(bullets)
+        ? bullets.map((b: { heading?: string; bodyText: string }) =>
+            `• ${b.heading ? `${b.heading}: ` : ''}${b.bodyText}`
+          )
+        : []),
+      calloutLinkText || '',
+      `${signoffGreeting} ${signoffTeam}`,
+      `${footerCopyright} • ${footerDisclaimer}`,
+    ]
+      .filter(Boolean)
+      .join('\n\n');
 
     // 1. Try sending from primary verified domain
     let res = await fetch('https://api.resend.com/emails', {
@@ -118,9 +134,11 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         from: 'WON Originals <notifications@mail.wonoriginals.online>',
+        reply_to: 'WON Originals <notifications@mail.wonoriginals.online>',
         to: toEmails,
         subject: emailSubject,
         html: htmlBody,
+        text: textBody,
       }),
     });
 
