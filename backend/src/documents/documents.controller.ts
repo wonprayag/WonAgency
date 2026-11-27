@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query } from '@nestjs/common';
 import { DocumentsService } from './documents.service.js';
 
 @Controller('documents')
@@ -21,8 +21,12 @@ export class DocumentsController {
   }
 
   @Get()
-  async getAll() {
-    return this.documentsService.getAll();
+  async getAll(
+    @Query('email') email?: string,
+    @Query('userId') userId?: string,
+    @Query('docType') docType?: string,
+  ) {
+    return this.documentsService.getAll(email, userId, docType);
   }
 
   @Get('project/:projectId')

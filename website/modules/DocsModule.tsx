@@ -32,7 +32,7 @@ import {
   Minimize2,
   Maximize2,
 } from "lucide-react";
-import { User, usersApi, noticesApi } from "../services/api";
+import { User, usersApi, noticesApi, API_BASE_URL } from "../services/api";
 
 export interface DocHighlight {
   id: string;
@@ -653,33 +653,59 @@ export const DocsModule: React.FC<DocsModuleProps> = ({ user }) => {
     }
   }, [selectedDeptFilter, teamMembers]);
 
-  // Saved documents library
+  // Saved documents library (scoped per user + synced with cloud shared docs)
+  const storageKey = `won_custom_docs_v8_${user?.id || user?.email || "guest"}`;
   const [savedDocs, setSavedDocs] = useState<CustomDocument[]>(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem("won_custom_docs_v8");
+        const stored = localStorage.getItem(storageKey);
         if (stored) return JSON.parse(stored);
       } catch (e) {
         console.error(e);
       }
     }
-    return [
-      INITIAL_NOTICE_DOC,
-      INITIAL_FUND_RELEASE_DOC,
-      INITIAL_TREASURY_DOC,
-      INITIAL_LETTER_DOC,
-      INITIAL_CHANGELOG_DOC,
-    ];
+    return [];
   });
+
+  // Load docs created by or explicitly shared via email with this user
+  useEffect(() => {
+    if (!user?.email && !user?.id) return;
+    const emailParam = encodeURIComponent((user?.email || "").trim().toLowerCase());
+    const userIdParam = encodeURIComponent(user?.id || "");
+    fetch(`${API_BASE_URL}/documents?email=${emailParam}&userId=${userIdParam}&docType=STUDIO`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((cloudDocs: any[]) => {
+        if (!Array.isArray(cloudDocs) || cloudDocs.length === 0) return;
+        const parsedCloud: CustomDocument[] = cloudDocs
+          .map((d) => {
+            try {
+              return d.payloadJson ? (JSON.parse(d.payloadJson) as CustomDocument) : null;
+            } catch {
+              return null;
+            }
+          })
+          .filter((x): x is CustomDocument => Boolean(x && x.id));
+        if (parsedCloud.length > 0) {
+          setSavedDocs((prev) => {
+            const byId = new Map(prev.map((doc) => [doc.id, doc]));
+            parsedCloud.forEach((doc) => {
+              if (!byId.has(doc.id)) byId.set(doc.id, doc);
+            });
+            return Array.from(byId.values());
+          });
+        }
+      })
+      .catch(() => {});
+  }, [user?.id, user?.email]);
 
   // Sync to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem("won_custom_docs_v8", JSON.stringify(savedDocs));
+      localStorage.setItem(storageKey, JSON.stringify(savedDocs));
     } catch (e) {
       console.error(e);
     }
-  }, [savedDocs]);
+  }, [savedDocs, storageKey]);
 
   // Bullet Handlers
   const handleAddBullet = (headingDefault = "", bodyDefault = "") => {
@@ -1072,7 +1098,7 @@ ${footerDisclaimer || "Official agency notice. Compliance required."}
 
       // 1. Send via Resend Email API
       if (sendDeliveryMethod.email && selectedEmails.length > 0) {
-        setDispatchStatus(`Sending emails to ${selectedEmails.length} recipients via Resend...`);
+        setDispatchStatus(`Sending emails to ${selectedEmails.length} recipients...`);
         const emailRes = await noticesApi.sendEmail({
           toEmails: selectedEmails,
           title: docTitle || "Agency Notice",
@@ -1109,24 +1135,62 @@ ${footerDisclaimer || "Official agency notice. Compliance required."}
         feedSuccess = true;
       }
 
+      if (emailSuccess) {
+        // Persist shared studio doc in MongoDB so only creator + email recipients see it in Docs Library
+        const sharedDocId = activeDocId || `studio-${Date.now()}`;
+        const sharedPayload: CustomDocument = {
+          id: sharedDocId,
+          title: docTitle || "Shared Notice",
+          recipientName,
+          salutationPrefix,
+          letterSubject,
+          leadStatement,
+          bullets,
+          calloutLinkText,
+          signoffGreeting,
+          signoffTeam,
+          footerCopyright,
+          footerDisclaimer,
+          showTopLogo,
+          watermarkType,
+          watermarkText,
+          watermarkOpacity,
+          updatedAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+        };
+        fetch(`${API_BASE_URL}/documents`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: sharedPayload.title,
+            category: "Studio Doc",
+            fileUrl: "#studio-doc",
+            docType: "STUDIO",
+            createdById: user?.id || "",
+            createdByEmail: user?.email || "",
+            sharedWithEmails: selectedEmails,
+            payloadJson: JSON.stringify(sharedPayload),
+          }),
+        }).catch(() => {});
+      }
+
       if (emailError) {
         setDispatchStatus(
           feedSuccess
-            ? `⚠ Live feed updated, but Resend email failed: ${emailError}`
-            : `Resend email error: ${emailError}`
+            ? `⚠ Live feed updated, but email failed: ${emailError}`
+            : `Email error: ${emailError}`
         );
         setTimeout(() => {
           setIsDispatching(false);
         }, 4000);
       } else if (emailSuccess && feedSuccess) {
-        setDispatchStatus(`✓ Dispatched via Resend to ${selectedEmails.length} recipients & posted to live feed!`);
+        setDispatchStatus(`✓ Dispatched to ${selectedEmails.length} recipients & posted to live feed!`);
         setTimeout(() => {
           setIsDispatching(false);
           setDispatchStatus(null);
           setShowSendModal(false);
         }, 2200);
       } else if (emailSuccess) {
-        setDispatchStatus(`✓ Successfully dispatched via Resend to ${selectedEmails.length} recipients!`);
+        setDispatchStatus(`✓ Successfully dispatched to ${selectedEmails.length} recipients!`);
         setTimeout(() => {
           setIsDispatching(false);
           setDispatchStatus(null);
@@ -1553,10 +1617,10 @@ ${footerDisclaimer || "Official agency notice. Compliance required."}
                     <span className="text-xs font-semibold text-slate-800 flex items-center gap-1.5">
                       <span>Direct Member Mail</span>
                       <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-sky-100 text-sky-800 border border-sky-200">
-                        Resend
+                        Email
                       </span>
                     </span>
-                    <span className="text-[10px] text-slate-500">Dispatch HTML email to all selected recipients via Resend</span>
+                    <span className="text-[10px] text-slate-500">Dispatch HTML email to all selected recipients</span>
                   </div>
                 </label>
 

@@ -355,6 +355,21 @@ export class DocumentEntity extends Document {
 
   @Prop({ required: true })
   uploadedAt: string;
+
+  @Prop({ required: false })
+  createdById?: string;
+
+  @Prop({ required: false })
+  createdByEmail?: string;
+
+  @Prop({ type: [String], default: [] })
+  sharedWithEmails?: string[];
+
+  @Prop({ required: false, default: 'PROJECT' })
+  docType?: string;
+
+  @Prop({ required: false })
+  payloadJson?: string;
 }
 export const DocumentSchema = SchemaFactory.createForClass(DocumentEntity);
 

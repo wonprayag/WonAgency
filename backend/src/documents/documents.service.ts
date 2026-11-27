@@ -11,8 +11,29 @@ export class DocumentsService {
     private categoryModel: Model<DocumentCategoryEntity>,
   ) {}
 
-  async getAll() {
-    const list = await this.documentModel.find().sort({ createdAt: -1 }).exec();
+  async getAll(email?: string, userId?: string, docType?: string) {
+    const query: any = {};
+    if (docType) {
+      query.docType = docType;
+    }
+    if (email || userId) {
+      const cleanEmail = (email || '').trim().toLowerCase();
+      const orClauses: any[] = [];
+      if (cleanEmail) {
+        orClauses.push({ createdByEmail: cleanEmail });
+        orClauses.push({ sharedWithEmails: cleanEmail });
+      }
+      if (userId) {
+        orClauses.push({ createdById: userId });
+      }
+      if (docType !== 'STUDIO') {
+        orClauses.push({ createdByEmail: { $exists: false } });
+      }
+      if (orClauses.length > 0) {
+        query.$or = orClauses;
+      }
+    }
+    const list = await this.documentModel.find(query).sort({ createdAt: -1 }).exec();
     return list.map((d) => ({
       id: d._id.toString(),
       _id: d._id.toString(),
@@ -22,6 +43,11 @@ export class DocumentsService {
       category: d.category,
       fileUrl: d.fileUrl,
       uploadedAt: d.uploadedAt,
+      createdById: d.createdById || '',
+      createdByEmail: d.createdByEmail || '',
+      sharedWithEmails: d.sharedWithEmails || [],
+      docType: d.docType || 'PROJECT',
+      payloadJson: d.payloadJson || '',
     }));
   }
 
@@ -51,13 +77,26 @@ export class DocumentsService {
     projectTitle?: string;
     category?: string;
     fileUrl?: string;
+    createdById?: string;
+    createdByEmail?: string;
+    sharedWithEmails?: string[];
+    docType?: string;
+    payloadJson?: string;
   }) {
+    const cleanShared = Array.isArray(data.sharedWithEmails)
+      ? data.sharedWithEmails.map((e) => e.trim().toLowerCase()).filter(Boolean)
+      : [];
     const docData: any = {
       projectTitle: data.projectTitle || 'General',
       title: data.title.trim(),
       category: data.category || 'Specification',
       fileUrl: data.fileUrl || '#',
       uploadedAt: new Date().toISOString().split('T')[0],
+      createdById: data.createdById || '',
+      createdByEmail: (data.createdByEmail || '').trim().toLowerCase(),
+      sharedWithEmails: cleanShared,
+      docType: data.docType || 'PROJECT',
+      payloadJson: data.payloadJson || '',
     };
     if (data.projectId && Types.ObjectId.isValid(data.projectId)) {
       docData.projectId = new Types.ObjectId(data.projectId);
@@ -72,6 +111,11 @@ export class DocumentsService {
       category: created.category,
       fileUrl: created.fileUrl,
       uploadedAt: created.uploadedAt,
+      createdById: created.createdById || '',
+      createdByEmail: created.createdByEmail || '',
+      sharedWithEmails: created.sharedWithEmails || [],
+      docType: created.docType || 'PROJECT',
+      payloadJson: created.payloadJson || '',
     };
   }
 

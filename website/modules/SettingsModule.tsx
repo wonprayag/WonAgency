@@ -38,6 +38,7 @@ const AVAILABLE_MODULES = [
   { key: "voting", label: "Voting", desc: "Team votes, polls, and feedback" },
   { key: "ideation", label: "Proposals", desc: "Share ideas and submit proposals" },
   { key: "funds", label: "Treasury", desc: "Funds, budget, and expenses" },
+  { key: "docs", label: "Docs", desc: "Notices, templates, and official letters" },
 ];
 
 const PRESET_COLORS = [

@@ -253,6 +253,32 @@ export const authApi = {
     return data;
   },
 
+  async forgotPassword(email: string): Promise<{ ok: boolean; message: string }> {
+    const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || "Could not send password reset code.");
+    }
+    return data;
+  },
+
+  async resetPassword(email: string, code: string, newPass: string): Promise<{ ok: boolean; message: string }> {
+    const res = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, code, newPass }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || "Could not reset password.");
+    }
+    return data;
+  },
+
   async changePassword(
     email: string,
     currentPass: string,
@@ -359,7 +385,7 @@ export const noticesApi = {
       }
 
       const errData = await backendRes.json().catch(() => null);
-      throw new Error(errData?.error || errData?.message || "Failed to dispatch email via Resend");
+      throw new Error(errData?.error || errData?.message || "Failed to dispatch email");
     } catch (err: any) {
       console.error("Failed to send notice email:", err);
       return { success: false, error: err.message || "Email dispatch failed" };

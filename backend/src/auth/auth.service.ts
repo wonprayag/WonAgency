@@ -11,6 +11,7 @@ import { Model, Types } from 'mongoose';
 import { UserEntity } from '../database/schemas/index.js';
 import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcryptjs';
+import { EmailService } from '../mail/email.service.js';
 
 const ALL_MODULES = [
   'dashboard',
@@ -24,9 +25,12 @@ const ALL_MODULES = [
 
 @Injectable()
 export class AuthService implements OnModuleInit {
+  private resetCodes = new Map<string, { code: string; expiresAt: number }>();
+
   constructor(
     @InjectModel(UserEntity.name) private userModel: Model<UserEntity>,
     private jwtService: JwtService,
+    private emailService: EmailService,
   ) {}
 
   async onModuleInit() {
@@ -118,6 +122,54 @@ export class AuthService implements OnModuleInit {
         allowedModules: modules,
       },
     };
+  }
+
+  async forgotPassword(email: string) {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      throw new BadRequestException('Please enter a valid email address');
+    }
+    const user = await this.userModel.findOne({ email: cleanEmail });
+    if (!user) {
+      throw new NotFoundException('No account found with that email');
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    this.resetCodes.set(cleanEmail, {
+      code,
+      expiresAt: Date.now() + 15 * 60 * 1000,
+    });
+
+    await this.emailService.sendPasswordResetEmail(user.email, code, user.name);
+    return {
+      ok: true,
+      message: `Password reset code sent to ${user.email}.`,
+    };
+  }
+
+  async resetPassword(email: string, code: string, newPass: string) {
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const record = this.resetCodes.get(cleanEmail);
+    if (!record || record.expiresAt < Date.now()) {
+      throw new BadRequestException('Reset code expired or not requested');
+    }
+    if (record.code !== (code || '').trim()) {
+      throw new BadRequestException('Invalid reset code');
+    }
+    if (!newPass || newPass.length < 6) {
+      throw new BadRequestException('New password must be at least 6 characters');
+    }
+
+    const user = await this.userModel.findOne({ email: cleanEmail });
+    if (!user) {
+      throw new NotFoundException('Account not found');
+    }
+
+    user.passwordHash = await bcrypt.hash(newPass, 10);
+    await user.save();
+    this.resetCodes.delete(cleanEmail);
+
+    return { ok: true, message: 'Password updated successfully. You can now log in.' };
   }
 
   /**

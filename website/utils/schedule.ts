@@ -320,8 +320,36 @@ export function getTodaySchedule(
       for (const sub of subjects) {
         if (sub.status === "INACTIVE") continue;
 
+        const uid = user?.id || (user as any)?._id;
+        const isMentorForSub = Boolean(
+          user &&
+            (user.role === "SUPER_ADMIN" ||
+              user.role === "ADMIN" ||
+              (uid && sub.mentorId === uid) ||
+              sub.mentor === user.name ||
+              sub.coMentors?.includes(user.name))
+        );
+        const isStudentEnrolledInSub = Boolean(
+          user &&
+            sub.enrolledMembers &&
+            sub.enrolledMembers.some((m) => (uid && m.userId === uid) || m.name === user.name)
+        );
+
         if (sub.hasBatches && sub.batches && sub.batches.length > 0) {
           for (const b of sub.batches) {
+            if (b.status === "INACTIVE") continue;
+            const isUserInBatch = Boolean(
+              user && b.memberIds && uid && b.memberIds.includes(uid)
+            );
+            const isBatchMentor = Boolean(
+              user &&
+                (isMentorForSub ||
+                  (uid && b.mentorId === uid) ||
+                  b.mentorName === user.name)
+            );
+            if (user && user.role !== "SUPER_ADMIN" && user.role !== "ADMIN" && !isBatchMentor && !isUserInBatch) {
+              continue;
+            }
             const bDays = b.schedule?.days || sub.days;
             if (dayMatches(bDays, nextDayShort)) {
               nextClassOtherDay = {
@@ -335,6 +363,9 @@ export function getTodaySchedule(
             }
           }
         } else if (dayMatches(sub.days, nextDayShort)) {
+          if (user && user.role !== "SUPER_ADMIN" && user.role !== "ADMIN" && !isMentorForSub && !isStudentEnrolledInSub) {
+            continue;
+          }
           nextClassOtherDay = {
             subjectName: sub.name,
             day: nextDayFull,

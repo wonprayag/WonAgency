@@ -25,6 +25,10 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
   const [currentText, setCurrentText] = useState("Build What Matters.");
   const [isDeleting, setIsDeleting] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [resetCode, setResetCode] = useState("");
+  const [resetNewPass, setResetNewPass] = useState("");
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
 
   React.useEffect(() => {
     const currentPhrase = phrases[phraseIndex];
@@ -390,25 +394,72 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
             <div suppressHydrationWarning className="pt-2 text-center login-4k-forgot">
               <button
                 type="button"
-                onClick={() => setResetSent(true)}
+                disabled={isResetting}
+                onClick={async () => {
+                  setResetSent(true);
+                  setErrorMessage(null);
+                  if (!email.trim()) {
+                    setResetMessage("Please enter your email address in the field above, then click Forgot password?.");
+                    return;
+                  }
+                  setIsResetting(true);
+                  try {
+                    const res = await authApi.forgotPassword(email.trim());
+                    setResetMessage(res.message);
+                  } catch (err: any) {
+                    setResetMessage(err.message || "Could not send password reset code.");
+                  } finally {
+                    setIsResetting(false);
+                  }
+                }}
                 className="text-sm font-medium text-slate-700 hover:text-slate-900 transition-colors py-1 inline-block cursor-pointer"
               >
-                Forgot password?
+                {isResetting ? "Sending reset code..." : "Forgot password?"}
               </button>
               {resetSent && (
-                <div className="mt-2.5 p-3 bg-sky-50 border border-sky-200/80 rounded-xl text-left">
+                <div className="mt-2.5 p-3 bg-sky-50 border border-sky-200/80 rounded-xl text-left space-y-2.5">
                   <p className="text-xs text-sky-800 font-medium leading-relaxed">
-                    {email.trim() ? (
-                      <>
-                        &#9993; Password reset instructions dispatched to{" "}
-                        <strong className="text-sky-950 font-semibold">{email.trim()}</strong> via Resend. Check your inbox!
-                      </>
-                    ) : (
-                      <>
-                        &#9432; Please enter your email address in the field above, then click <strong>Forgot password?</strong>.
-                      </>
-                    )}
+                    {resetMessage || "Enter your email above to receive a 6-digit reset code."}
                   </p>
+                  {email.trim() && (
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={resetCode}
+                        onChange={(e) => setResetCode(e.target.value)}
+                        placeholder="6-digit reset code"
+                        className="w-full px-3 py-2 bg-white border border-sky-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-sky-600"
+                      />
+                      <input
+                        type="password"
+                        value={resetNewPass}
+                        onChange={(e) => setResetNewPass(e.target.value)}
+                        placeholder="New password (min 6 chars)"
+                        className="w-full px-3 py-2 bg-white border border-sky-200 rounded-lg text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-sky-600"
+                      />
+                      <button
+                        type="button"
+                        disabled={isResetting || !resetCode.trim() || resetNewPass.length < 6}
+                        onClick={async () => {
+                          setIsResetting(true);
+                          try {
+                            const res = await authApi.resetPassword(email.trim(), resetCode.trim(), resetNewPass);
+                            setResetMessage(res.message);
+                            setPassword(resetNewPass);
+                            setResetCode("");
+                            setResetNewPass("");
+                          } catch (err: any) {
+                            setResetMessage(err.message || "Invalid or expired reset code.");
+                          } finally {
+                            setIsResetting(false);
+                          }
+                        }}
+                        className="w-full py-2 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                      >
+                        {isResetting ? "Updating..." : "Update Password"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

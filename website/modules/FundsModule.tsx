@@ -213,7 +213,7 @@ export const FundsModule: React.FC<FundsModuleProps> = ({ user, funds, setFunds 
       if (!res.ok || !data.success) {
         throw new Error(data.error || "Failed to send receipt email");
       }
-      showToast(`Receipt sent to ${email} via Resend!`, "success");
+      showToast(`Receipt sent to ${email}!`, "success");
     } catch (err: any) {
       showToast(err.message || "Failed to send receipt", "error");
     } finally {
