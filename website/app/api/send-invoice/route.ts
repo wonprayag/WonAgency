@@ -74,17 +74,17 @@ export async function POST(request: Request) {
             <td align="center">
               <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 620px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);">
                 <tr>
-                  <td style="padding: 32px 36px 24px 36px; border-bottom: 1px solid #e2e8f0;">
+                  <td style="padding: 24px 22px 20px 22px; border-bottom: 1px solid #e2e8f0;">
                     <table width="100%" border="0" cellspacing="0" cellpadding="0">
                       <tr>
-                        <td valign="top">
-                          <img src="https://iili.io/oKRgCKb.png" alt="WON" width="96" style="display: block; width: 96px; height: auto; margin-bottom: 8px;" />
-                          <p style="margin: 0; font-size: 12px; color: #64748b;">WON Agency • Operations &amp; Finance</p>
+                        <td valign="top" style="padding-right: 12px;">
+                          <img src="https://iili.io/oKRgCKb.png" alt="WON" width="90" style="display: block; width: 90px; height: auto; margin-bottom: 8px;" />
+                          <p style="margin: 0; font-size: 11.5px; color: #64748b;">WON Agency • Operations &amp; Finance</p>
                         </td>
                         <td align="right" valign="top">
-                          <p style="margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 0.04em; color: #0f172a;">${docLabel}</p>
-                          <p style="margin: 4px 0 0 0; font-family: monospace; font-size: 12px; font-weight: 700; color: #087fc4;">${receiptRef || 'ITR-WON'}</p>
-                          <p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">Date: ${date || '-'}</p>
+                          <p style="margin: 0; font-size: 16px; font-weight: 800; letter-spacing: 0.03em; color: #0f172a; line-height: 1.25;">${docLabel}</p>
+                          <p style="margin: 4px 0 0 0; font-family: monospace; font-size: 11.5px; font-weight: 700; color: #087fc4;">${receiptRef || 'ITR-WON'}</p>
+                          <p style="margin: 4px 0 0 0; font-size: 11.5px; color: #64748b;">Date: ${date || '-'}</p>
                         </td>
                       </tr>
                     </table>
@@ -92,18 +92,20 @@ export async function POST(request: Request) {
                 </tr>
 
                 <tr>
-                  <td style="padding: 24px 36px;">
+                  <td style="padding: 18px 22px;">
                     <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
                       <tr>
-                        <td width="50%" valign="top" style="padding: 16px 18px; border-right: 1px solid #e2e8f0;">
+                        <td width="52%" valign="top" style="padding: 14px 14px; border-right: 1px solid #e2e8f0; word-break: break-word; overflow-wrap: anywhere;">
                           <p style="margin: 0 0 4px 0; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b;">${personLabel}</p>
-                          <p style="margin: 0; font-size: 14px; font-weight: 700; color: #0f172a;">${usedBy || 'Agency Member'}</p>
-                          <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748b;">${toEmail}</p>
+                          <p style="margin: 0; font-size: 13.5px; font-weight: 700; color: #0f172a;">${usedBy || 'Agency Member'}</p>
+                          <p style="margin: 3px 0 0 0; font-size: 11.5px; color: #64748b; word-break: break-all;">${toEmail}</p>
                         </td>
-                        <td width="50%" valign="top" style="padding: 16px 18px;">
+                        <td width="48%" valign="top" style="padding: 14px 14px; word-break: break-word;">
                           <p style="margin: 0 0 4px 0; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b;">Project &amp; Category</p>
-                          <p style="margin: 0; font-size: 14px; font-weight: 700; color: #087fc4;">${workProject || 'General Operations'}</p>
-                          <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748b;">${category || 'General'}</p>
+                          <p style="margin: 0; font-size: 13.5px; font-weight: 700; color: #087fc4;">${workProject || 'General Operations'}</p>
+                          ${category && category.trim().toLowerCase() !== (workProject || 'General Operations').trim().toLowerCase()
+                            ? `<p style="margin: 3px 0 0 0; font-size: 11.5px; color: #64748b;">${category}</p>`
+                            : ''}
                         </td>
                       </tr>
                     </table>
@@ -111,24 +113,24 @@ export async function POST(request: Request) {
                 </tr>
 
                 <tr>
-                  <td style="padding: 0 36px 24px 36px;">
+                  <td style="padding: 0 22px 20px 22px;">
                     <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;">
                       <thead>
                         <tr style="background-color: #f1f5f9;">
-                          <th align="left" style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #475569; border-bottom: 1px solid #e2e8f0;">Description</th>
-                          <th align="center" style="padding: 12px 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #475569; border-bottom: 1px solid #e2e8f0;">Qty</th>
-                          <th align="right" style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #475569; border-bottom: 1px solid #e2e8f0;">Amount</th>
+                          <th align="left" style="padding: 11px 14px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #475569; border-bottom: 1px solid #e2e8f0;">Description</th>
+                          <th align="center" style="padding: 11px 10px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #475569; border-bottom: 1px solid #e2e8f0;">Qty</th>
+                          <th align="right" style="padding: 11px 14px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #475569; border-bottom: 1px solid #e2e8f0;">Amount</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
-                          <td style="padding: 16px; border-bottom: 1px solid #f1f5f9;">
-                            <p style="margin: 0; font-size: 14px; font-weight: 700; color: #0f172a;">${title || 'Transaction Item'}</p>
-                            ${notes ? `<p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">${notes}</p>` : ''}
-                            ${proofUrl ? `<p style="margin: 4px 0 0 0; font-size: 11px; font-family: monospace; color: #087fc4;">Ref: ${proofUrl}</p>` : ''}
+                          <td style="padding: 14px; border-bottom: 1px solid #f1f5f9;">
+                            <p style="margin: 0; font-size: 13.5px; font-weight: 700; color: #0f172a;">${title || 'Transaction Item'}</p>
+                            ${notes && notes.trim().toLowerCase() !== (title || '').trim().toLowerCase() ? `<p style="margin: 4px 0 0 0; font-size: 12px; color: #64748b;">${notes}</p>` : ''}
+                            ${proofUrl ? `<p style="margin: 4px 0 0 0; font-size: 11px; font-family: monospace; color: #087fc4; word-break: break-all;">Ref: ${proofUrl}</p>` : ''}
                           </td>
-                          <td align="center" valign="top" style="padding: 16px 12px; font-size: 13px; color: #334155; border-bottom: 1px solid #f1f5f9;">1</td>
-                          <td align="right" valign="top" style="padding: 16px; font-size: 14px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #f1f5f9;">${formattedAmount}</td>
+                          <td align="center" valign="top" style="padding: 14px 10px; font-size: 13px; color: #334155; border-bottom: 1px solid #f1f5f9;">1</td>
+                          <td align="right" valign="top" style="padding: 14px; font-size: 13.5px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #f1f5f9; white-space: nowrap;">${formattedAmount}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -136,33 +138,33 @@ export async function POST(request: Request) {
                 </tr>
 
                 <tr>
-                  <td style="padding: 0 36px 28px 36px;">
+                  <td style="padding: 0 22px 24px 22px;">
                     <table width="100%" border="0" cellspacing="0" cellpadding="0">
                       <tr>
-                        <td width="55%" valign="middle">
-                          <span style="display: inline-block; padding: 6px 12px; background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 999px; font-size: 11px; font-weight: 700; color: #047857;">
+                        <td width="54%" valign="top" style="padding-right: 14px;">
+                          <div style="display: inline-block; padding: 6px 10px; background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; font-size: 10.5px; font-weight: 700; line-height: 1.4; color: #047857;">
                             STATUS: ${status} • ${approvedBy ? `By ${approvedBy}` : 'Verified'}
-                          </span>
+                          </div>
                           ${(qrDataUrl || verifyUrl || receiptRef) ? (() => {
                             const qrTargetUrl = verifyUrl || `https://app.wonoriginals.online/verify/${encodeURIComponent(receiptRef || 'WON')}`;
                             const qrImageSrc = `https://api.qrserver.com/v1/create-qr-code/?size=176x176&margin=6&bgcolor=ffffff&color=0f172a&data=${encodeURIComponent(qrTargetUrl)}`;
                             return `
                             <div style="margin-top: 12px;">
-                              <img src="${qrImageSrc}" alt="QR Verify" width="88" height="88" style="display: block; width: 88px; height: 88px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 4px; background-color: #ffffff;" />
-                              <p style="margin: 4px 0 0 0; font-size: 10px; color: #64748b;">Scan QR or <a href="${qrTargetUrl}" style="color: #087fc4;">verify online</a></p>
+                              <img src="${qrImageSrc}" alt="QR Verify" width="84" height="84" style="display: block; width: 84px; height: 84px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 4px; background-color: #ffffff;" />
+                              <p style="margin: 5px 0 0 0; font-size: 10px; color: #64748b;">Scan QR or <a href="${qrTargetUrl}" style="color: #087fc4;">verify online</a></p>
                             </div>
                           `;
                           })() : ''}
                         </td>
-                        <td width="45%" align="right" valign="top">
+                        <td width="46%" align="right" valign="top" style="padding-left: 14px; border-left: 1px solid #f1f5f9;">
                           <table width="100%" border="0" cellspacing="0" cellpadding="0">
                             <tr>
-                              <td style="padding: 4px 0; font-size: 12px; color: #64748b;">Subtotal</td>
-                              <td align="right" style="padding: 4px 0; font-size: 12px; font-weight: 600; color: #0f172a;">${formattedAmount}</td>
+                              <td style="padding: 4px 8px 4px 0; font-size: 12px; color: #64748b;">Subtotal</td>
+                              <td align="right" style="padding: 4px 0; font-size: 12px; font-weight: 600; color: #0f172a; white-space: nowrap;">${formattedAmount}</td>
                             </tr>
                             <tr>
-                              <td style="padding: 8px 0 0 0; font-size: 14px; font-weight: 700; color: #0f172a; border-top: 1px solid #e2e8f0;">Total</td>
-                              <td align="right" style="padding: 8px 0 0 0; font-size: 18px; font-weight: 800; color: #087fc4; border-top: 1px solid #e2e8f0;">${formattedAmount}</td>
+                              <td style="padding: 8px 8px 0 0; font-size: 13.5px; font-weight: 700; color: #0f172a; border-top: 1px solid #e2e8f0;">Total</td>
+                              <td align="right" style="padding: 8px 0 0 0; font-size: 17px; font-weight: 800; color: #087fc4; border-top: 1px solid #e2e8f0; white-space: nowrap;">${formattedAmount}</td>
                             </tr>
                           </table>
                         </td>
